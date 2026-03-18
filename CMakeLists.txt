@@ -21,6 +21,8 @@ if(MSVC)
         string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
     endforeach()
 endif()
+# Dependencies
+include(FetchContent)
 
 # ---- ZSTD (for RSB1 bytecode encoding) ----
 FetchContent_Declare(
