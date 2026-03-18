@@ -24,6 +24,16 @@ endif()
 # Dependencies
 include(FetchContent)
 
+# ---- xxHash (for RSB1 hashing) ----
+FetchContent_Declare(
+    xxhash
+    GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
+    GIT_TAG v0.8.3
+    SOURCE_SUBDIR cmake/cmake
+)
+set(XXHASH_BUILD_XXHSUM OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(xxhash)
+
 # ---- ZSTD (for RSB1 bytecode encoding) ----
 FetchContent_Declare(
     zstd
@@ -83,9 +93,10 @@ set(LUAU_BUILD_WEB OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(luau)
 
 # Identify core source files (FLAT STRUCTURE)
-file(GLOB CORE_SOURCES 
-    "src/*.cpp" 
-    "src/*.asm"
+# Explicitly using main file to avoid entry point conflicts
+set(CORE_SOURCES 
+    "src/exports.cpp" 
+    "src/syscalls.asm"
 )
 
 # Force MASM for the syscall file
@@ -105,6 +116,7 @@ target_link_libraries(Remoter PRIVATE
     Luau.Compiler Luau.Ast
     libzstd_static
     blake3
+    xxhash::xxhash
     httplib::httplib
     nlohmann_json::nlohmann_json
 )
@@ -117,4 +129,5 @@ target_include_directories(Remoter PRIVATE
     ${zstd_SOURCE_DIR}/lib
     ${zstd_SOURCE_DIR}/lib/common
     ${blake3_SOURCE_DIR}/c
+    ${xxhash_SOURCE_DIR}
 )
