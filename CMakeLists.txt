@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(Remoter)
 
-# Enable MASM immediately after the project
+# Enable MASM immediately after project
 enable_language(ASM_MASM)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Force static builds for all dependencies
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # Force static linking of VC++ runtime (/MT)
 if(MSVC)
@@ -29,7 +32,6 @@ FetchContent_Declare(
     xxhash
     GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
     GIT_TAG v0.8.3
-    SOURCE_SUBDIR cmake/cmake
 )
 set(XXHASH_BUILD_XXHSUM OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(xxhash)
@@ -116,7 +118,7 @@ target_link_libraries(Remoter PRIVATE
     Luau.Compiler Luau.Ast
     libzstd_static
     blake3
-    xxhash::xxhash
+    xxhash
     httplib::httplib
     nlohmann_json::nlohmann_json
 )
