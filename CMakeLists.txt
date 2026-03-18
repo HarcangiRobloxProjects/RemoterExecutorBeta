@@ -114,7 +114,7 @@ set_target_properties(Remoter PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(Remoter PRIVATE 
     kernel32 user32 winhttp ws2_32
     Luau.Compiler Luau.Ast
-    zlib
+    zlibstatic
     libzstd_static
     blake3
     httplib::httplib
