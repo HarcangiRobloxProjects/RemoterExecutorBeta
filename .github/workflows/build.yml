@@ -1,60 +1,46 @@
-name: Remoter Executor Beta
+name: Build Remoter Executor
 
 on:
   push:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
-  build-cpp:
+  build:
     runs-on: windows-latest
+    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release .
-
-    - name: Build C++ Core
-      run: cmake --build ${{github.workspace}}/build --config Release
-
-    - name: Upload Core DLL
-      uses: actions/upload-artifact@v4
-      with:
-        name: remoter-core
-        path: ${{github.workspace}}/build/Release/Remoter.dll
-
-  build-ui:
-    needs: build-cpp
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
-    - name: Download Core DLL
-      uses: actions/download-artifact@v4
-      with:
-        name: remoter-core
-        path: ui/bin/x64/Release/net10.0-windows/
+    - name: Configure CMake
+      run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
 
-    - name: Restore dependencies
-      run: dotnet restore ui/RblxExecutorUI.csproj
+    - name: Build C++ Core
+      run: cmake --build build --config Release
 
-    - name: Build UI
-      run: dotnet build ui/RblxExecutorUI.csproj -c Release -r win-x64 --no-restore
+    - name: Publish UI
+      run: dotnet publish ui/RblxExecutorUI.csproj -c Release -r win-x64 --self-contained true -o publish
 
-    - name: Publish Remoter Executor
-      run: dotnet publish ui/RblxExecutorUI.csproj -c Release -r win-x64 --self-contained true -o ${{github.workspace}}/publish
+    - name: Finalize Build Package
+      shell: pwsh
+      run: |
+        if (Test-Path "build/Release/Remoter.dll") {
+          Copy-Item "build/Release/Remoter.dll" -Destination "publish/"
+        } else {
+          Write-Error "Remoter.dll not found in build/Release/"
+          exit 1
+        }
 
-    - name: Copy DLL to Publish Folder
-      run: copy ${{github.workspace}}/build/Release/Remoter.dll ${{github.workspace}}/publish/
-
-    - name: Upload Final Build
+    - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Remoter-Executor-Full
-        path: ${{github.workspace}}/publish/
+        name: Remoter-Executor-Build
+        path: publish/
